@@ -1,0 +1,182 @@
+# ============================================================================
+# TestForge AI — Docker Compose
+# ============================================================================
+# Full stack: API server, Runner, PostgreSQL, Redis, Browserless, Ollama
+#
+# Usage:
+#   docker compose up -d                    # Core stack (api + pg + redis + browserless)
+#   docker compose --profile gpu up -d      # Include Ollama with GPU support
+#   docker compose --profile runner up -d   # Include test runner container
+#   docker compose --profile full up -d     # Everything (runner + gpu)
+# ============================================================================
+
+services:
+  # ── TestForge API Server ──────────────────────────────────────────────────
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - ../.env
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://testforge:testforge@postgres:5432/testforge
+      - REDIS_URL=redis://redis:6379
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - TESTFORGE_LICENSE_KEY=${TESTFORGE_LICENSE_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      browserless:
+        condition: service_healthy
+    volumes:
+      - ../reports:/app/reports
+      - ../allure-results:/app/allure-results
+    networks:
+      - testforge-network
+    restart: unless-stopped
+
+  # ── TestForge Runner ──────────────────────────────────────────────────────
+  # Headless test execution container (Playwright + Appium + CLI)
+  # Use with --profile runner or --profile full
+  runner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.runner
+    profiles:
+      - runner
+      - full
+    env_file:
+      - ../.env
+    environment:
+      - NODE_ENV=production
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - TESTFORGE_LICENSE_KEY=${TESTFORGE_LICENSE_KEY:-}
+      - BROWSERLESS_URL=ws://browserless:3000?token=${BROWSERLESS_TOKEN:-testforge}
+      - API_URL=http://api:3000
+    depends_on:
+      api:
+        condition: service_healthy
+      browserless:
+        condition: service_healthy
+    volumes:
+      - ../reports:/app/reports
+      - ../screenshots:/app/screenshots
+      - ../test-results:/app/test-results
+      - ../allure-results:/app/allure-results
+    shm_size: "2gb"
+    networks:
+      - testforge-network
+    restart: "no"
+
+  # ── PostgreSQL Database ───────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=testforge
+      - POSTGRES_PASSWORD=testforge
+      - POSTGRES_DB=testforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testforge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - testforge-network
+    restart: unless-stopped
+
+  # ── Redis (BullMQ job queues) ────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - testforge-network
+    restart: unless-stopped
+
+  # ── Browserless — self-hosted browser grid for Playwright ────────────────
+  browserless:
+    image: ghcr.io/browserless/chromium:latest
+    ports:
+      - "3100:3000"
+    environment:
+      - TOKEN=${BROWSERLESS_TOKEN:-testforge}
+      - CONCURRENT=10
+      - MAX_TIME=300000
+      - EXIT_ON_HEALTH_FAILURE=true
+      - HEALTH=true
+    shm_size: "2gb"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/json/version || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    networks:
+      - testforge-network
+    restart: unless-stopped
+
+  # ── Ollama (optional) — local AI provider ─────────────────────────────────
+  # Use with --profile gpu or --profile full
+  ollama:
+    image: ollama/ollama:latest
+    profiles:
+      - gpu
+      - full
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_MAX_LOADED_MODELS=2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 30s
+    networks:
+      - testforge-network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  ollama-data:
+    driver: local
+
+networks:
+  testforge-network:
+    driver: bridge

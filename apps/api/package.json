@@ -1,0 +1,47 @@
+{
+  "name": "@testforge/api",
+  "version": "0.1.0",
+  "description": "TestForge AI REST + GraphQL + WebSocket API server",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@testforge/core": "workspace:*",
+    "@testforge/ai-engine": "workspace:*",
+    "@testforge/web-runner": "workspace:*",
+    "@testforge/mobile-runner": "workspace:*",
+    "@testforge/api-runner": "workspace:*",
+    "@testforge/device-cloud": "workspace:*",
+    "@testforge/reporter": "workspace:*",
+    "@fastify/cors": "^9.0.0",
+    "@fastify/websocket": "^10.0.0",
+    "@fastify/sensible": "^5.0.0",
+    "@fastify/rate-limit": "^9.0.0",
+    "fastify": "^4.28.0",
+    "fastify-plugin": "^4.5.1",
+    "@fastify/swagger": "^8.15.0",
+    "@fastify/swagger-ui": "^4.0.0",
+    "@fastify/jwt": "^8.0.0",
+    "bullmq": "^5.10.0",
+    "ioredis": "^5.4.0",
+    "socket.io": "^4.7.5",
+    "debug": "^4.3.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.12",
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.8",
+    "eslint": "^9.16.0"
+  }
+}

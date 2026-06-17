@@ -1,0 +1,29 @@
+{
+  "name": "@testforge/web-runner",
+  "version": "0.1.0",
+  "description": "Playwright-based web test runner with AI hooks",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@testforge/core": "workspace:*",
+    "@testforge/ai-engine": "workspace:*",
+    "@playwright/test": "^1.49.0",
+    "debug": "^4.3.7"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.12",
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.8"
+  }
+}

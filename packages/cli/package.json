@@ -1,0 +1,39 @@
+{
+  "name": "@testforge/cli",
+  "version": "0.1.0",
+  "description": "TestForge AI CLI — commander-based interface for test automation",
+  "type": "module",
+  "bin": {
+    "testforge": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/cli.ts src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/cli.ts src/index.ts --format esm --dts --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@testforge/core": "workspace:*",
+    "@testforge/ai-engine": "workspace:*",
+    "@testforge/web-runner": "workspace:*",
+    "@testforge/mobile-runner": "workspace:*",
+    "@testforge/api-runner": "workspace:*",
+    "commander": "^12.1.0",
+    "inquirer": "^12.1.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.1.1",
+    "figures": "^6.1.0",
+    "debug": "^4.3.7"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.12",
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,103 @@
+# TestForge AI — Reusable GitHub Action for Users
+# Allows users to run TestForge tests in their own CI pipelines
+#
+# Usage:
+# - uses: testforge-ai/.github/templates/github-action@main
+#   with:
+#     suite: smoke
+#     environment: staging
+#     api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+#     parallel: 2
+
+name: "TestForge AI Test Runner"
+description: "Run TestForge AI tests in CI"
+
+inputs:
+  suite:
+    description: "Test suite to run"
+    required: false
+    default: "smoke"
+  environment:
+    description: "Target environment (dev/staging/prod)"
+    required: false
+    default: "dev"
+  api-key:
+    description: "AI provider API key (Anthropic)"
+    required: false
+    default: ""
+  ollama-url:
+    description: "Ollama base URL (if using local AI)"
+    required: false
+    default: ""
+  parallel:
+    description: "Number of parallel workers"
+    required: false
+    default: "1"
+  device:
+    description: "Target device ID (for mobile tests)"
+    required: false
+    default: ""
+  ai-heal:
+    description: "Enable AI self-healing"
+    required: false
+    default: "false"
+  record:
+    description: "Record video during test execution"
+    required: false
+    default: "false"
+  report-format:
+    description: "Report format (json/allure/pdf)"
+    required: false
+    default: "allure"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+
+    - name: Install Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: "1.1.38"
+
+    - name: Install TestForge CLI
+      shell: bash
+      run: npm install -g @testforge/cli
+
+    - name: Install Playwright browsers
+      shell: bash
+      run: npx playwright install --with-deps chromium
+
+    - name: Run TestForge tests
+      shell: bash
+      run: |
+        testforge run ${{ inputs.suite }} \
+          --env ${{ inputs.environment }} \
+          --parallel ${{ inputs.parallel }} \
+          ${{ inputs.device != '' && format('--device {0}', inputs.device) || '' }} \
+          ${{ inputs.ai-heal == 'true' && '--ai-heal' || '' }} \
+          ${{ inputs.record == 'true' && '--record' || '' }}
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.api-key }}
+        OLLAMA_BASE_URL: ${{ inputs.ollama-url }}
+
+    - name: Upload test reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: testforge-reports
+        path: |
+          reports/
+          allure-results/
+        retention-days: 30
+
+    - name: Publish Allure Report
+      if: inputs.report-format == 'allure' && always()
+      uses: simple-elf/allure-report-action@v1
+      with:
+        allure_results: allure-results/
+        gh_pages: gh-pages
+        allure_report: allure-report

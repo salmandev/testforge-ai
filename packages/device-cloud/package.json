@@ -1,0 +1,46 @@
+{
+  "name": "@testforge/device-cloud",
+  "version": "0.1.0",
+  "description": "Device grid abstraction layer — local, cloud, and third-party providers",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./providers": {
+      "types": "./dist/providers/index.d.ts",
+      "import": "./dist/providers/index.js"
+    },
+    "./grid-manager": {
+      "types": "./dist/grid-manager.d.ts",
+      "import": "./dist/grid-manager.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@testforge/core": "workspace:*",
+    "debug": "^4.3.7",
+    "axios": "^1.7.7",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.12",
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.8",
+    "eslint": "^9.16.0"
+  }
+}

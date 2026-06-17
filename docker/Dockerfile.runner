@@ -1,0 +1,119 @@
+# ============================================================================
+# TestForge AI — Runner Docker Image
+# ============================================================================
+# Headless test execution with Playwright, Appium, and CLI
+# Based on official Playwright Docker image for browser support
+# ============================================================================
+
+# ── Stage 1: Build ──────────────────────────────────────────────────────────
+FROM mcr.microsoft.com/playwright:v1.49.0-jammy AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    gnupg \
+    git \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 22 LTS + Bun
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g bun@1.1.38
+
+WORKDIR /app
+
+# Copy package files for dependency resolution
+COPY package.json bun.lock ./
+COPY packages/core/package.json ./packages/core/
+COPY packages/ai-engine/package.json ./packages/ai-engine/
+COPY packages/cli/package.json ./packages/cli/
+COPY packages/web-runner/package.json ./packages/web-runner/
+COPY packages/mobile-runner/package.json ./packages/mobile-runner/
+COPY packages/api-runner/package.json ./packages/api-runner/
+COPY packages/device-cloud/package.json ./packages/device-cloud/
+COPY packages/reporter/package.json ./packages/reporter/
+
+# Install all dependencies
+RUN bun install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Build all packages
+RUN bun run build
+
+# ── Stage 2: Runtime ────────────────────────────────────────────────────────
+FROM mcr.microsoft.com/playwright:v1.49.0-jammy AS production
+
+ENV NODE_ENV=production \
+    DEBIAN_FRONTEND=noninteractive \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Install runtime system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    android-tools-adb \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 22 LTS + Bun
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g bun@1.1.38
+
+# Install Appium 2.x for mobile testing
+RUN npm install -g appium@latest \
+    && appium driver install uiautomator2
+
+WORKDIR /app
+
+# Copy package files and install production deps
+COPY package.json bun.lock ./
+COPY packages/core/package.json ./packages/core/
+COPY packages/ai-engine/package.json ./packages/ai-engine/
+COPY packages/cli/package.json ./packages/cli/
+COPY packages/web-runner/package.json ./packages/web-runner/
+COPY packages/mobile-runner/package.json ./packages/mobile-runner/
+COPY packages/api-runner/package.json ./packages/api-runner/
+COPY packages/device-cloud/package.json ./packages/device-cloud/
+COPY packages/reporter/package.json ./packages/reporter/
+
+RUN bun install --frozen-lockfile --production
+
+# Copy built artifacts from builder
+COPY --from=builder /app/packages/core/dist ./packages/core/dist
+COPY --from=builder /app/packages/ai-engine/dist ./packages/ai-engine/dist
+COPY --from=builder /app/packages/cli/dist ./packages/cli/dist
+COPY --from=builder /app/packages/web-runner/dist ./packages/web-runner/dist
+COPY --from=builder /app/packages/mobile-runner/dist ./packages/mobile-runner/dist
+COPY --from=builder /app/packages/api-runner/dist ./packages/api-runner/dist
+COPY --from=builder /app/packages/device-cloud/dist ./packages/device-cloud/dist
+COPY --from=builder /app/packages/reporter/dist ./packages/reporter/dist
+
+# Copy Playwright browsers from builder (already installed in base image)
+COPY --from=builder /ms-playwright /ms-playwright
+
+# Create directories for reports, screenshots, test results
+RUN mkdir -p /app/reports /app/screenshots /app/test-results /app/allure-results
+
+# Run as non-root user
+RUN groupadd -r testforge && useradd -r -g testforge -d /app testforge \
+    && chown -R testforge:testforge /app \
+    && chown -R testforge:testforge /ms-playwright
+USER testforge
+
+# Expose ports for Appium and debug
+EXPOSE 4723
+
+# Health check — verify CLI is available
+HEALTHCHECK --interval=60s --timeout=10s --start-period=15s --retries=3 \
+    CMD bun run --bun ./packages/cli/dist/cli.js doctor --quiet || exit 1
+
+# Set entrypoint to testforge CLI
+ENTRYPOINT ["bun", "run", "--bun", "./packages/cli/dist/cli.js"]
+CMD ["--help"]

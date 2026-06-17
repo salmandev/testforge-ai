@@ -1,0 +1,65 @@
+{
+  "name": "@testforge/reporter",
+  "version": "0.1.0",
+  "description": "Test reporting — Allure, AI narrative, PDF, and notifications",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./allure": {
+      "types": "./dist/reporters/allure.d.ts",
+      "import": "./dist/reporters/allure.js"
+    },
+    "./ai": {
+      "types": "./dist/reporters/ai.d.ts",
+      "import": "./dist/reporters/ai.js"
+    },
+    "./pdf": {
+      "types": "./dist/reporters/pdf.d.ts",
+      "import": "./dist/reporters/pdf.js"
+    },
+    "./notification": {
+      "types": "./dist/reporters/notification.d.ts",
+      "import": "./dist/reporters/notification.js"
+    },
+    "./junit": {
+      "types": "./dist/reporters/junit.d.ts",
+      "import": "./dist/reporters/junit.js"
+    },
+    "./compliance": {
+      "types": "./dist/reporters/compliance.d.ts",
+      "import": "./dist/reporters/compliance.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@testforge/core": "workspace:*",
+    "@testforge/ai-engine": "workspace:*",
+    "axios": "^1.7.7",
+    "debug": "^4.3.7",
+    "zod": "^3.23.8"
+  },
+  "optionalDependencies": {
+    "puppeteer": "^23.10.0"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.12",
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.8",
+    "eslint": "^9.16.0"
+  }
+}

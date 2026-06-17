@@ -1,0 +1,11 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(main)/d365/page": "app/(main)/d365/page.js",
+  "/(main)/dashboard/page": "app/(main)/dashboard/page.js",
+  "/(main)/reports/page": "app/(main)/reports/page.js",
+  "/(main)/runs/[id]/page": "app/(main)/runs/[id]/page.js",
+  "/(main)/settings/page": "app/(main)/settings/page.js",
+  "/(main)/suites/page": "app/(main)/suites/page.js",
+  "/page": "app/page.js"
+}

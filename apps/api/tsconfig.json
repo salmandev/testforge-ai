@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "composite": false,
+    "incremental": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../../packages/ai-engine" },
+    { "path": "../../packages/web-runner" },
+    { "path": "../../packages/mobile-runner" },
+    { "path": "../../packages/api-runner" },
+    { "path": "../../packages/device-cloud" },
+    { "path": "../../packages/reporter" }
+  ]
+}

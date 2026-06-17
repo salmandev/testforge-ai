@@ -1,0 +1,43 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*local"],
+  "globalEnv": [
+    "ANTHROPIC_API_KEY",
+    "OLLAMA_BASE_URL",
+    "DATABASE_URL",
+    "REDIS_URL",
+    "TESTFORGE_LICENSE_KEY",
+    "JWT_SECRET",
+    "BROWSERLESS_TOKEN",
+    "NODE_ENV",
+    "PORT",
+    "HOST",
+    "LOG_LEVEL"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
+    "clean": {
+      "cache": false,
+      "dependsOn": ["^clean"]
+    }
+  }
+}

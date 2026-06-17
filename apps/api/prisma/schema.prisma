@@ -1,0 +1,223 @@
+// Prisma schema for TestForge AI
+// Maps to @testforge/core types
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      UserRole @default(USER)
+  orgId     String?
+  org       Organization? @relation(fields: [orgId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  VIEWER
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      OrgPlan  @default(FREE)
+  users     User[]
+  projects  Project[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("organizations")
+}
+
+enum OrgPlan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+model Project {
+  id              String       @id @default(cuid())
+  name            String
+  baseUrl         String
+  orgId           String
+  org             Organization @relation(fields: [orgId], references: [id])
+  environments    Json         @default("{}")
+  integrations    Json         @default("{}")
+  licenseFeatures String[]     @default([])
+  aiProvider      Json?
+  defaultBrowsers Json         @default("[]")
+  tags            String[]     @default([])
+  suites          Suite[]
+  runs            Run[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("projects")
+}
+
+model Suite {
+  id          String    @id @default(cuid())
+  name        String
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parallelism Int       @default(1)
+  tags        String[]  @default([])
+  schedule    String?
+  stopOnFailure Boolean @default(false)
+  retries     Int       @default(0)
+  timeout     Int       @default(300000)
+  testCases   Json      @default("[]")
+  runs        Run[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("suites")
+}
+
+model TestCase {
+  id          String   @id @default(cuid())
+  suiteId     String?
+  name        String
+  type        TestType @default(WEB)
+  priority    TestPriority @default(MEDIUM)
+  steps       Json     @default("[]")
+  tags        String[] @default([])
+  timeout     Int      @default(30000)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("test_cases")
+}
+
+enum TestType {
+  WEB
+  MOBILE
+  API
+  VISUAL
+  ACCESSIBILITY
+}
+
+enum TestPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model Run {
+  id          String     @id @default(cuid())
+  suiteId     String
+  suite       Suite      @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     Project    @relation(fields: [projectId], references: [id])
+  status      RunStatus  @default(PENDING)
+  startedAt   DateTime?
+  completedAt DateTime?
+  duration    Int        @default(0)
+  triggeredBy RunTrigger @default(MANUAL)
+  environment String?
+  gitSha      String?
+  ciUrl       String?
+  aiSummary   String?
+  results     RunResult[]
+  findings    ComplianceFinding[]
+
+  @@index([suiteId])
+  @@index([projectId])
+  @@index([status])
+  @@map("runs")
+}
+
+enum RunStatus {
+  PENDING
+  RUNNING
+  PASSED
+  FAILED
+  CANCELLED
+}
+
+enum RunTrigger {
+  MANUAL
+  SCHEDULE
+  CI
+  AGENT
+}
+
+model RunResult {
+  id           String         @id @default(cuid())
+  runId        String
+  run          Run            @relation(fields: [runId], references: [id], onDelete: Cascade)
+  testId       String
+  testName     String
+  status       ResultStatus
+  duration     Int
+  error        String?
+  screenshot   String?
+  video        String?
+  trace        String?
+  stepResults  Json           @default("[]")
+  deviceInfo   Json?
+
+  @@index([runId])
+  @@map("run_results")
+}
+
+enum ResultStatus {
+  PASSED
+  FAILED
+  SKIPPED
+  FLAKY
+}
+
+model ComplianceFinding {
+  id            String        @id @default(cuid())
+  runId         String
+  run           Run           @relation(fields: [runId], references: [id], onDelete: Cascade)
+  controlId     String
+  controlName   String
+  controlNameAr String?
+  framework     String
+  status        ControlStatus
+  riskRating    RiskRating?
+  assessment    String
+  assessmentAr  String?
+  remediation   String?
+  remediationAr String?
+  evidence      Json          @default("[]")
+  confidence    Float         @default(0)
+  generatedByAi Boolean       @default(true)
+  assessedAt    DateTime      @default(now())
+
+  @@index([runId])
+  @@index([framework])
+  @@map("compliance_findings")
+}
+
+enum ControlStatus {
+  PASS
+  FAIL
+  PARTIAL
+  NOT_TESTED
+}
+
+enum RiskRating {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFORMATIONAL
+}

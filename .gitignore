@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+
+# IDE
+*.code-workspace
+
+# License
+healed-locators.json
+testforge-license.json
+
+# Playwright
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Appium
+.appium/
+
+# Test output directories
+reports/
+screenshots/
+test-results/
+allure-results/

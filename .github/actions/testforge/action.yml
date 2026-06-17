@@ -1,0 +1,118 @@
+name: "TestForge AI Run"
+description: "Run TestForge AI test suites in GitHub Actions"
+author: "TestForge AI"
+
+inputs:
+  suite:
+    description: "Test suite to run (default: smoke)"
+    required: false
+    default: "smoke"
+  env:
+    description: "Environment (dev/staging/prod)"
+    required: false
+    default: "staging"
+  parallel:
+    description: "Number of parallel workers"
+    required: false
+    default: "1"
+  tag:
+    description: "Filter tests by tag"
+    required: false
+  base-url:
+    description: "Application base URL"
+    required: false
+    default: "http://localhost:3000"
+  headed:
+    description: "Run in headed mode"
+    required: false
+    default: "false"
+  ai-provider:
+    description: "AI provider (anthropic/ollama)"
+    required: false
+    default: "anthropic"
+  anthropic-api-key:
+    description: "Anthropic API key"
+    required: false
+  report-format:
+    description: "Report format (allure/junit/json)"
+    required: false
+    default: "junit"
+  upload-artifacts:
+    description: "Upload test results as artifacts"
+    required: false
+    default: "true"
+
+outputs:
+  status:
+    description: "Run status (passed/failed)"
+    value: ${{ steps.run.outputs.status }}
+  results-path:
+    description: "Path to test results"
+    value: ${{ steps.run.outputs.results-path }}
+  duration:
+    description: "Total duration in seconds"
+    value: ${{ steps.run.outputs.duration }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: "1.1.38"
+
+    - name: Install TestForge CLI
+      shell: bash
+      run: |
+        bun add -g @testforge/cli || npm install -g @testforge/cli
+
+    - name: Run tests
+      id: run
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        TESTFORGE_CI: "true"
+        TESTFORGE_ENV: ${{ inputs.env }}
+        TESTFORGE_BASE_URL: ${{ inputs.base-url }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        ARGS="--env ${{ inputs.env }} --parallel ${{ inputs.parallel }} --report ${{ inputs.report-format }}"
+        if [ "${{ inputs.tag }}" != "" ]; then
+          ARGS="$ARGS --tag ${{ inputs.tag }}"
+        fi
+        if [ "${{ inputs.headed }}" = "true" ]; then
+          ARGS="$ARGS --headed"
+        fi
+
+        testforge ci ${{ inputs.suite }} $ARGS 2>&1 | tee testforge-output.log
+
+        STATUS=$?
+        echo "status=$([ $STATUS -eq 0 ] && echo 'passed' || echo 'failed')" >> $GITHUB_OUTPUT
+        echo "results-path=./test-results" >> $GITHUB_OUTPUT
+        echo "duration=$(grep -oP 'duration.*?(\d+)' testforge-output.log | grep -oP '\d+' | head -1 || echo '0')" >> $GITHUB_OUTPUT
+        exit $STATUS
+
+    - name: Upload test results
+      if: inputs.upload-artifacts == 'true' && always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: testforge-results-${{ github.job }}
+        path: |
+          ./test-results/
+          ./allure-results/
+          ./reports/
+        retention-days: 30
+
+    - name: Publish test results (JUnit)
+      if: inputs.report-format == 'junit' && always()
+      uses: dorny/test-reporter@v1
+      with:
+        name: "TestForge Results"
+        path: "./test-results/**/*.xml"
+        reporter: java-junit
+
+branding:
+  icon: "check-circle"
+  color: "blue"
