@@ -79,7 +79,7 @@
     "debug": "^4.3.7",
     "axios": "^1.7.7",
     "axe-core": "^4.10.2",
-    "pixelmatch": "^6.0.3",
+    "pixelmatch": "^6.0.0",
     "pngjs": "^7.0.0",
     "@azure/msal-node": "^2.16.0"
   },

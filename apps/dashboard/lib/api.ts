@@ -5,6 +5,10 @@ import type {
   Report,
   DashboardStats,
   D365Entity,
+  Project,
+  ComplianceFramework,
+  ComplianceResult,
+  AIInsights,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -112,4 +116,50 @@ export async function generateReport(runId: string): Promise<Report> {
   return apiFetch<Report>(`/api/reports/${runId}/generate`, {
     method: "POST",
   });
+}
+
+// ─── Projects ───────────────────────────────────────────────
+
+export async function getProjects(): Promise<Project[]> {
+  return apiFetch<Project[]>("/api/projects");
+}
+
+export async function createProject(data: {
+  name: string;
+  description?: string;
+}): Promise<Project> {
+  return apiFetch<Project>("/api/projects", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  await apiFetch(`/api/projects/${id}`, { method: "DELETE" });
+}
+
+// ─── Compliance ─────────────────────────────────────────────
+
+export async function getComplianceFrameworks(): Promise<ComplianceFramework[]> {
+  return apiFetch<ComplianceFramework[]>("/api/compliance/frameworks");
+}
+
+export async function runComplianceAudit(data: {
+  framework: string;
+  suiteId?: string;
+}): Promise<ComplianceResult> {
+  return apiFetch<ComplianceResult>("/api/compliance/run", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+// ─── AI Insights ────────────────────────────────────────────
+
+export async function getAIInsights(): Promise<AIInsights> {
+  return apiFetch<AIInsights>("/api/ai/insights");
+}
+
+export async function generateAIInsights(): Promise<AIInsights> {
+  return apiFetch<AIInsights>("/api/ai/insights/generate", { method: "POST" });
 }

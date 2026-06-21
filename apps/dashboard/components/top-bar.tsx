@@ -14,7 +14,7 @@ const LOCALES: Record<Locale, { label: string; flag: string }> = {
 };
 
 export function TopBar() {
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { theme, setTheme } = useTheme();
   const [locale, setLocale] = useState<Locale>("en");
   const [mounted, setMounted] = useState(false);
@@ -77,7 +77,7 @@ export function TopBar() {
         <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm">
           <User className="h-4 w-4 text-muted-foreground" />
           <span className="hidden sm:inline text-sm">
-            {user?.email ?? (locale === "ar" ? "ضيف" : "Guest")}
+            {isAuthenticated ? (locale === "ar" ? "مستخدم" : "User") : (locale === "ar" ? "ضيف" : "Guest")}
           </span>
         </div>
       </div>

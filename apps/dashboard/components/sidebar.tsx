@@ -7,25 +7,31 @@ import { useAuth } from "./auth-provider";
 import {
   LayoutDashboard,
   FlaskConical,
-  PlayCircle,
   Building2,
   BarChart3,
   Settings,
   LogOut,
   Zap,
+  FolderKanban,
+  ShieldCheck,
+  BrainCircuit,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/suites", label: "Test Suites", icon: FlaskConical },
-  { href: "/d365", label: "Dynamics 365", icon: Building2 },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", label_ar: "لوحة التحكم", icon: LayoutDashboard },
+  { href: "/projects", label: "Projects", label_ar: "المشاريع", icon: FolderKanban },
+  { href: "/suites", label: "Test Suites", label_ar: "مجموعات الاختبار", icon: FlaskConical },
+  { href: "/d365", label: "Dynamics 365", label_ar: "داينامكس ٣٦٥", icon: Building2 },
+  { href: "/compliance", label: "Compliance", label_ar: "الامتثال", icon: ShieldCheck },
+  { href: "/ai-insights", label: "AI Insights", label_ar: "رؤى الذكاء", icon: BrainCircuit },
+  { href: "/reports", label: "Reports", label_ar: "التقارير", icon: BarChart3 },
+  { href: "/settings", label: "Settings", label_ar: "الإعدادات", icon: Settings },
 ] as const;
 
 export function Sidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const isRTL = typeof document !== "undefined" && document.documentElement.dir === "rtl";
 
   return (
     <aside className="flex h-full w-64 flex-col border-r bg-card">
@@ -38,6 +44,7 @@ export function Sidebar() {
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
+          const displayLabel = isRTL ? item.label_ar : item.label;
           return (
             <Link
               key={item.href}
@@ -48,9 +55,10 @@ export function Sidebar() {
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}
+              title={isRTL ? item.label : item.label_ar}
             >
               <Icon className="h-4 w-4" />
-              {item.label}
+              {displayLabel}
             </Link>
           );
         })}

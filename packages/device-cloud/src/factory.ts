@@ -1,10 +1,10 @@
-import type { DeviceCloudProvider, Device, Capabilities, Session } from "../types.js";
-import { LocalProvider } from "../providers/local.js";
-import { TestForgeCloudProvider } from "../providers/testforge-cloud.js";
-import { BrowserStackAdapter } from "../providers/browserstack.js";
-import { SauceLabsAdapter } from "../providers/saucelabs.js";
-import { LambdaTestAdapter } from "../providers/lambdatest.js";
-import { GridManager } from "../grid-manager.js";
+import type { DeviceCloudProvider, Session } from "./types.js";
+import { LocalProvider } from "./providers/local.js";
+import { TestForgeCloudProvider } from "./providers/testforge-cloud.js";
+import { BrowserStackAdapter } from "./providers/browserstack.js";
+import { SauceLabsAdapter } from "./providers/saucelabs.js";
+import { LambdaTestAdapter } from "./providers/lambdatest.js";
+import { GridManager } from "./grid-manager.js";
 import debug from "debug";
 
 const log = debug("testforge:device-cloud:factory");

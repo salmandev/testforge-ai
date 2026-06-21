@@ -29,6 +29,7 @@ export const DEFAULT_D365_CONFIG: D365RunnerConfig = {
   waitForUciOverlay: true,
   mobile: false,
   retries: 0,
+  parallel: 1,
 };
 
 /**

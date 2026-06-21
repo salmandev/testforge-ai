@@ -87,3 +87,49 @@ export interface UserSettings {
   emailRecipients?: string[];
   teamsWebhook?: string;
 }
+
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  suiteCount: number;
+  runCount: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ComplianceFramework {
+  id: string;
+  name: string;
+  name_ar?: string;
+  description: string;
+  region: string;
+  totalControls: number;
+}
+
+export interface ComplianceResult {
+  framework: string;
+  compliancePercentage: number;
+  totalControls: number;
+  coveredControls: number;
+  gaps: string[];
+  aiSummary: string;
+  coverage: {
+    controlId: string;
+    controlName: string;
+    covered: boolean;
+    status: string;
+    notes: string;
+  }[];
+  runAt: string;
+}
+
+export interface AIInsights {
+  executiveSummary: string;
+  topRisks: string[];
+  priorityFixes: { test: string; fix: string; priority: string }[];
+  healthStatus: string;
+  flakinessWarnings: { test: string; pattern: string }[];
+  coverageGaps: string[];
+  generatedAt: string;
+}
