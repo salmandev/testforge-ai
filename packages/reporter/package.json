@@ -52,14 +52,16 @@
     "zod": "^3.23.8"
   },
   "optionalDependencies": {
-    "puppeteer": "^23.10.0"
+    "puppeteer": "^23.10.0",
+    "nodemailer": "^6.9.16"
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",
     "@types/node": "^22.10.0",
+    "@types/nodemailer": "^8.0.1",
+    "eslint": "^9.16.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.0",
-    "vitest": "^2.1.8",
-    "eslint": "^9.16.0"
+    "vitest": "^2.1.8"
   }
 }

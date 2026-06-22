@@ -274,28 +274,40 @@ export class NotificationReporter {
 
     log("Sending email notification to: %s", emailConfig.to.join(", "));
 
-    // In production, use nodemailer to send actual emails
-    // For now, generate the HTML email body and log it
     const htmlBody = this._generateEmailHtml(runData, analysis);
 
-    log("Email HTML generated (%d bytes). To send emails, install nodemailer and configure SMTP.", htmlBody.length);
+    try {
+      const nodemailer = await import("nodemailer");
+      const transporter = nodemailer.default.createTransport({
+        host: emailConfig.smtpHost,
+        port: emailConfig.smtpPort,
+        secure: emailConfig.useTls,
+        auth: emailConfig.username
+          ? { user: emailConfig.username, pass: emailConfig.password }
+          : undefined,
+      });
 
-    // Placeholder for nodemailer implementation:
-    // const nodemailer = await import("nodemailer");
-    // const transporter = nodemailer.createTransport({
-    //   host: emailConfig.smtpHost,
-    //   port: emailConfig.smtpPort,
-    //   secure: emailConfig.useTls,
-    //   auth: emailConfig.username
-    //     ? { user: emailConfig.username, pass: emailConfig.password }
-    //     : undefined,
-    // });
-    // await transporter.sendMail({
-    //   from: emailConfig.from,
-    //   to: emailConfig.to,
-    //   subject: `TestForge AI — ${runData.projectName}: ${runData.status}`,
-    //   html: htmlBody,
-    // });
+      const passed = runData.results.filter((r) => r.status === "passed").length;
+      const total = runData.results.length;
+      const statusEmoji = passed === total ? "✅" : "⚠️";
+
+      await transporter.sendMail({
+        from: emailConfig.from,
+        to: emailConfig.to.join(", "),
+        subject: `${statusEmoji} TestForge AI — ${runData.projectName}: ${passed}/${total} passed`,
+        html: htmlBody,
+      });
+
+      log("Email sent successfully to %s", emailConfig.to.join(", "));
+    } catch (error) {
+      // Fallback: log the HTML if nodemailer not available or send fails
+      if ((error as Error).message?.includes("Cannot find module") || (error as NodeJS.ErrnoException).code === "ERR_MODULE_NOT_FOUND") {
+        log("nodemailer not installed. Email HTML generated (%d bytes). Install with: bun add nodemailer", htmlBody.length);
+      } else {
+        log("Email send failed: %O", error);
+        throw error;
+      }
+    }
   }
 
   /**

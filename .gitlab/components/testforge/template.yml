@@ -1,0 +1,85 @@
+# TestForge AI GitLab CI Component
+#
+# Usage in your .gitlab-ci.yml:
+#   include:
+#     - component: $CI_SERVER_FQDN/your-group/testforge-ai/.gitlab/components/testforge@main
+#       inputs:
+#         suite: smoke
+#         reporter: junit
+
+spec:
+  inputs:
+    suite:
+      description: "Test suite to run"
+      default: "smoke"
+    provider:
+      description: "AI provider (anthropic/ollama)"
+      default: "auto"
+    api-url:
+      description: "TestForge API URL"
+      default: "http://localhost:3000"
+    token:
+      description: "TestForge API token (uses CI_JOB_TOKEN by default)"
+      default: "$CI_JOB_TOKEN"
+    reporter:
+      description: "Report format (allure/junit/json)"
+      default: "junit"
+    locale:
+      description: "Locale for reports (en/ar)"
+      default: "en"
+    parallel:
+      description: "Number of parallel workers"
+      default: "2"
+    base-url:
+      description: "Application base URL"
+      default: "http://localhost:3000"
+    stage:
+      description: "CI stage name"
+      default: "test"
+
+---
+
+testforge-run:
+  stage: $[[ inputs.stage ]]
+  image: oven/bun:1.1
+  variables:
+    TESTFORGE_SUITE: $[[ inputs.suite ]]
+    TESTFORGE_PROVIDER: $[[ inputs.provider ]]
+    TESTFORGE_API_URL: $[[ inputs.api-url ]]
+    TESTFORGE_TOKEN: $[[ inputs.token ]]
+    TESTFORGE_REPORTER: $[[ inputs.reporter ]]
+    TESTFORGE_LOCALE: $[[ inputs.locale ]]
+    TESTFORGE_PARALLEL: $[[ inputs.parallel ]]
+    TESTFORGE_BASE_URL: $[[ inputs.base-url ]]
+    ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY
+  before_script:
+    - bun install --frozen-lockfile
+    - bun run build
+  script:
+    - |
+      bunx testforge ci "$TESTFORGE_SUITE" \
+        --env staging \
+        --parallel "$TESTFORGE_PARALLEL" \
+        --report "$TESTFORGE_REPORTER" \
+        --base-url "$TESTFORGE_BASE_URL" \
+        2>&1 | tee testforge-output.txt
+    - |
+      # Parse exit code and JSON summary
+      EXIT_CODE=${PIPESTATUS[0]}
+      if [ -f testforge-summary.json ]; then
+        echo "TestForge summary:"
+        cat testforge-summary.json
+      fi
+      exit $EXIT_CODE
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - reports/junit.xml
+    paths:
+      - reports/
+      - allure-results/
+    expire_in: 30 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
